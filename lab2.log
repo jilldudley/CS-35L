@@ -1,0 +1,226 @@
+Jillian Dudley
+204782002
+lab section 5
+
+First I wanted to check the locale and make sure it was the right one. It was
+not at first so I changed it:
+command: locale
+		 export LC_ALL='C'
+		 
+Next I had to make sure the file "words" was sorted.
+command: sort /usr/share/dict/words > words
+
+To get a text file which contains the HTML for the assignments webpage,
+I used the wget command.
+command:wget https://web.cs.ucla.edu/classes/winter18/cs35L/assign/assign2.html
+//this created an HTML file called "assign2.html"
+
+Now I have to try the commands stated in the assignment:
+
+Command:tr -c 'A-Za-z' '[\n*]' < assign2.html
+//This command printed out words one by one on separate lines. I noticed that
+there were many blank lines in between some of the words so they were spaced
+fairly haphazardly. The words printed also described the instructions of the
+ assignment.
+
+Command:tr -cs 'A-Za-z' '[\n*]' < assign2.html
+//The difference between this command and the previous command is this one used
+the flag -cs whereas the other one used the flad -c. This one printed similar
+words to the one previous, however there were no blank lines between any of the
+other lines. It also described instructions for the assignment.
+
+Command: tr -cs 'A-Za-z' '[\n*]' < assign2.html | sort
+//this command made the shell print a long list of words, all one per line, 
+sorted in order. There were no empty lines between any of the words. My guess
+is that the -c flag causes it to break up new lines in between words, and I
+believe the -s part of the flag is to make it so there are no empty lines in 
+between the words which are being printed. 
+
+command: tr -cs 'A-Za-z' '[\n*]' < assign2.html | sort -u 
+//this one looked similar to the command right before it, however this one did
+a unique sort so there were no repeated words. You can tell the difference
+when looking at the words outputted because in the last command, there were
+many lines which had the same word printed multiple times in a row whereas
+this time, there were no repeated words. 
+
+command: tr -cs 'A-Za-z' '[\n*]' < assign2.html | sort -u | comm - words
+//this one output a long list of words sorted in alphabetical order, one per
+line, with no blank lines in between. I know that comm means to compare, and 
+words is the file we sorted as one of the first steps in the assignment. What
+I believe is going on here is the sorted and unique version of "assign2.html"
+is being compared to the file "words" and the differences are being printed.
+
+command: tr -cs 'A-Za-z' '[\n*]' < assign2.html | sort -u | comm -23 - words
+//This command printed a list of words that was a lot smaller than the one
+in the previous command. The difference between the two commands is the -23
+flag. I believe this one is outputting the words that are unique to our
+"assign2.html" file whereas the command before was outputting all of the 
+unique words. 
+
+
+To start on the rest of the lab assignment, I downloaded the website which 
+the Hawaiian words were on.
+command: wget http://mauimapp.com/moolelo/hwnwdseng.htm
+//it named this file 'hwnwdseng.htm'
+
+I need to find out how to extract the Hawaiian words from the website and add
+them to the file, hwords, which is meant to be a simple Hawaiian dictionary.
+
+I used the command: "cat hwnwdseng.htm" to see what I'm working with and to see
+how the words are formatted and split up.
+
+All of the commands for this script are going into the shell script buildwords.
+
+So the first thing I wanted to do was delete everything in the file except for
+the Hawaiian words. In order to do this I added the following commands:
+commands:
+sed '/<!DOCTYPE/,/<\/font><\/td>/d' |
+sed '/<\/table>/,/<\/html>/d' |
+sed '/<tr>/,/<\/td>/d'|
+
+The first one was the delete everything leading up to the first english word,
+the second one was to delete everything that came after the list of words
+finished, and the third one was to delete the english words, so there was
+just Hawaiian words remaining
+
+Next I added a command to convert all of the words to lower case:
+command:
+tr '[:upper:]' '[:lower:]' |
+
+Then I wanted to replace all of the occurrences of "</td>" with new lines
+command: sed 's/<\/td>/\n/g' |
+
+We were instructed to change all occurrences of the back tick ` to an
+apostrophe ', so I did this command:
+command: sed  "s/\`/\'/g" |
+ 
+Next I wanted to double check that there were no leftover elements from the
+html files so I used the command:
+command: sed 's/<[^>]*>//g' |
+I tried to use this command earlier in the script at first but I was suspicious
+that it might have been deleting things it was nto supposed to, so when I moved
+it here I noticed that the outcome of "missed Hawaiian words" was reduced. 
+
+The next command I added was meant to replace the ", " scenario as described in
+the spec
+command: sed -E "s/,\s|\s/\n/g" |
+This replaced the ",\s" case with a new line so they were be treated as
+separate words.
+
+Nearing the end, I used a final delete command to get rid of the words left in 
+the file which did not meet the standards we had to process them.
+command: sed '/-/d' |
+
+I also got rid of all of the blank spaces
+command: tr -d '[:blank:]' |
+
+Next I made it so that only Hawaiian words which had the proper characters
+would be shown:
+command: grep "^[pk\' mnwlhaeiou]\{1,\}$" |
+
+Finally I did a unique sort so they would all be in order and would not have
+any repeated words:
+command: sort -u
+
+
+In order to test my shell script, I wanted to build hwords using the buildwords
+which I created. I used this command:
+command: cat hwnwdseng.htm | ./buildwords > hwords
+When I did this, it denied me permission so I tried to change that using this:
+command: chmod +7777 buildwords
+
+Now when I tried to fill the hwords file, it worked so I could run my tests.
+
+The first thing I tested was how many Hawaiian words were misspelled. I saw
+that there were supposed to be input as lower case because the dictionary we
+made was lowercase as well. I used the following commands:
+commands: cat assign2.html | tr -cs "pk\'mnwlhaeiou" '[\n*]' | tr [':upper:]'
+'[:lower:]' | sort -u | comm -23 - hwords > numberMissedHawaiian
+
+wc -w numberMissedHawaiian   
+
+This said that there were 199 words, meaning there were 199 misspelled Hawaiian
+words based on the script I wrote.
+
+Next, I did the same thing but checked the number of misspelled English words
+on the assignment webpage. I used the commands:
+commands: cat assign2.html | tr -cs "A-Za-z" '[\n*]' | tr '[:upper:]'
+'[:lower:]' | sort -u | comm -23 - words > numberMissedEnglish
+
+wc -w numberMissedEnglish
+
+This said that there were 38 misspelled English words. I ran this one more time
+because I was not sure whether or not this was supposed to have the "tr 
+'[:upper]' '[:lower:]' " part so I omitted that and ran it again-- without 
+giving all input as lower case, it said there were 80 misspelled words. 
+
+
+
+Then I tested to see if there were any words which were misspelled in English
+but not in Hawaiian. I ran the following commands:
+commands: cat numberMissedEnglish | tr -cs "pk\'mnwlhaeiou" '[\n*]' | sort -u |
+comm -12 - hwords > numberMissedEH
+
+wc -w numberMissedEH
+
+It told me there were 6 words misspelled in English but not in Hawaiian. I 
+opened up numberMissedEH in emacs to see what they were, and they were these:
+
+e
+halau
+i
+lau
+po
+wiki
+
+
+Finally I did the same thing, but the other way around. I tested to see how
+manywords were misspelled in Hawaiian but not in English. I used the
+following commands:
+commands: cat numberMissedHawaiian | tr -cs 'A-Za-z' '[\n*]' | sort -u |
+comm -12 - words > numberMissedHE
+
+wc -w numberMissedHE
+
+This told me there were 109 words misspelled in Hawaiian but no in English. I
+opened the file in emacs to pull the following examples:
+examples:
+a
+ail
+ain
+ake
+al
+ale
+alen
+all
+amine
+amp
+ample
+an
+aph
+aul
+awk
+e
+ea
+ee
+el
+em
+emp
+en
+ep
+epa
+h
+ha
+han
+hap
+he
+hei
+hell
+hem
+hen
+hi
+hin
+ho
+how
+howe
+...and so on.
